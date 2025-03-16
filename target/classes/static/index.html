@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Counter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .counter-container {
+            text-align: center;
+            margin: 40px 0;
+        }
+        .counter-value {
+            font-size: 72px;
+            font-weight: bold;
+            color: #333;
+        }
+        .counter-button {
+            padding: 12px 24px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .counter-button:hover {
+            background-color: #45a049;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .connected {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .disconnected {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+    </style>
+</head>
+<body>
+<h1>WebSocket Counter Example</h1>
+
+<div class="counter-container">
+    <div class="counter-value" id="counter">0</div>
+    <button class="counter-button" id="incrementButton" disabled>Increment</button>
+</div>
+
+<div class="status disconnected" id="status">Disconnected</div>
+
+<script>
+    // DOM elements
+    const counterElement = document.getElementById('counter');
+    const incrementButton = document.getElementById('incrementButton');
+    const statusElement = document.getElementById('status');
+
+    // WebSocket connection
+    let socket;
+
+    // Connect to the WebSocket server
+    function connect() {
+        // Create a new WebSocket connection
+        socket = new WebSocket('ws://localhost:8025/websocket/counter');
+
+        // Connection opened
+        socket.addEventListener('open', function(event) {
+            console.log('WebSocket connection established');
+            statusElement.textContent = 'Connected';
+            statusElement.className = 'status connected';
+            incrementButton.disabled = false;
+        });
+
+        // Listen for messages from the server
+        socket.addEventListener('message', function(event) {
+            console.log('Message from server:', event.data);
+            counterElement.textContent = event.data;
+        });
+
+        // Connection closed
+        socket.addEventListener('close', function(event) {
+            console.log('WebSocket connection closed');
+            statusElement.textContent = 'Disconnected';
+            statusElement.className = 'status disconnected';
+            incrementButton.disabled = true;
+
+            // Try to reconnect after 5 seconds
+            setTimeout(connect, 5000);
+        });
+
+        // Connection error
+        socket.addEventListener('error', function(event) {
+            console.error('WebSocket error:', event);
+            statusElement.textContent = 'Error connecting to server';
+            statusElement.className = 'status disconnected';
+            incrementButton.disabled = true;
+        });
+    }
+
+    // Send "increment" message to the server when the button is clicked
+    incrementButton.addEventListener('click', function() {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send('increment');
+        }
+    });
+
+    // Connect when the page loads
+    connect();
+</script>
+</body>
+</html>
